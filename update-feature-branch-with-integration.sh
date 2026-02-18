@@ -7,6 +7,10 @@
 set -euo pipefail
 
 BRANCH_NAME="${1:?Usage: $0 <branch-name>}"
+# Normalize: TeamCity may pass origin/feature-branch or refs/heads/feature-branch
+BRANCH_NAME="${BRANCH_NAME#origin/}"
+BRANCH_NAME="${BRANCH_NAME#remotes/origin/}"
+BRANCH_NAME="${BRANCH_NAME#refs/heads/}"
 
 REMOTE=origin
 INTEGRATION_BRANCH=integration
@@ -14,12 +18,12 @@ INTEGRATION_BRANCH=integration
 echo "Rebasing branch '${BRANCH_NAME}' onto '${REMOTE}/${INTEGRATION_BRANCH}'"
 git branch -a
 
-# Ensure we're on the right branch and clean
-git checkout "${BRANCH_NAME}"
-git status -sb
+# Fetch branch and integration so they exist (agent may only have default branch)
+git fetch "${REMOTE}" "${BRANCH_NAME}" "${INTEGRATION_BRANCH}"
 
-# Fetch latest integration (no checkout of integration needed)
-git fetch "${REMOTE}" "${INTEGRATION_BRANCH}"
+# Ensure we're on the right branch (create/update from remote)
+git checkout -B "${BRANCH_NAME}" "${REMOTE}/${BRANCH_NAME}"
+git status -sb
 
 if ! git rebase "${REMOTE}/${INTEGRATION_BRANCH}"; then
   echo "ERROR: Rebase had conflicts. Aborting rebase. Resolve conflicts manually (rebase ${BRANCH_NAME} onto ${INTEGRATION_BRANCH} locally) and push."
