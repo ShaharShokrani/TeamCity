@@ -1,42 +1,38 @@
 #!/usr/bin/env bash
-# Update a feature/bug/task branch with latest integration (rebase only).
+# Rebase source branch onto target branch and push (source = branch to update, target = base).
 # Used by TeamCity "Update feature branch with integration" build.
 # Succeeds only when there are no conflicts; on conflict the build fails
-# and the dev team must resolve manually (rebase onto integration locally).
+# and the dev team must resolve manually (rebase source onto target locally).
 
 set -euo pipefail
 
-BRANCH_NAME="${1:?Usage: $0 <branch-name>}"
-# Normalize: TeamCity may pass origin/feature-branch or refs/heads/feature-branch
-BRANCH_NAME="${BRANCH_NAME#origin/}"
-BRANCH_NAME="${BRANCH_NAME#remotes/origin/}"
-BRANCH_NAME="${BRANCH_NAME#refs/heads/}"
+SOURCE_BRANCH="${1:?Usage: $0 <source-branch> <target-branch>}"
+TARGET_BRANCH="${2:?Usage: $0 <source-branch> <target-branch>}"
 
 REMOTE=origin
-INTEGRATION_BRANCH=main
 
-echo "Rebasing branch '${BRANCH_NAME}' onto '${REMOTE}/${INTEGRATION_BRANCH}'"
+echo "Rebasing source '${SOURCE_BRANCH}' onto target '${REMOTE}/${TARGET_BRANCH}'"
 git branch -a
 
-# Fetch branch and integration so they exist (agent may only have default branch)
-git fetch "${REMOTE}" "${BRANCH_NAME}" "${INTEGRATION_BRANCH}"
+# Fetch both branches so they exist (agent may only have default branch)
+git fetch "${REMOTE}" "${SOURCE_BRANCH}" "${TARGET_BRANCH}"
 
 # Clean working tree so checkout is not blocked by local changes (e.g. script on main differs from branch)
 git reset --hard HEAD
 git clean -fd
 
-# Ensure we're on the right branch (create/update from remote)
-git checkout -B "${BRANCH_NAME}" "${REMOTE}/${BRANCH_NAME}"
+# Ensure we're on the source branch (create/update from remote)
+git checkout -B "${SOURCE_BRANCH}" "${REMOTE}/${SOURCE_BRANCH}"
 git status -sb
 
-if ! git rebase "${REMOTE}/${INTEGRATION_BRANCH}"; then
-  echo "ERROR: Rebase had conflicts. Aborting rebase. Resolve conflicts manually (rebase ${BRANCH_NAME} onto ${INTEGRATION_BRANCH} locally) and push."
+if ! git rebase "${REMOTE}/${TARGET_BRANCH}"; then
+  echo "ERROR: Rebase had conflicts. Aborting rebase. Resolve conflicts manually (rebase ${SOURCE_BRANCH} onto ${TARGET_BRANCH} locally) and push."
   git rebase --abort
   exit 1
 fi
 
 # Fail the push if remote moved (e.g. dev pushed); do not overwrite—dev machines are source of truth.
 echo "Rebase succeeded. Pushing (force-with-lease)..."
-git push --force-with-lease "${REMOTE}" "${BRANCH_NAME}"
+git push --force-with-lease "${REMOTE}" "${SOURCE_BRANCH}"
 
-echo "Done. Branch '${BRANCH_NAME}' is now rebased onto '${INTEGRATION_BRANCH}'."
+echo "Done. Branch '${SOURCE_BRANCH}' is now rebased onto '${TARGET_BRANCH}'."
