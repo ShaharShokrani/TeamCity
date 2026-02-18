@@ -13,7 +13,7 @@ BRANCH_NAME="${BRANCH_NAME#remotes/origin/}"
 BRANCH_NAME="${BRANCH_NAME#refs/heads/}"
 
 REMOTE=origin
-INTEGRATION_BRANCH=integration
+INTEGRATION_BRANCH=main
 
 echo "Rebasing branch '${BRANCH_NAME}' onto '${REMOTE}/${INTEGRATION_BRANCH}'"
 git branch -a
