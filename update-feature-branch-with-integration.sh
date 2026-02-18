@@ -12,7 +12,6 @@ TARGET_BRANCH="${2:?Usage: $0 <source-branch> <target-branch>}"
 REMOTE=origin
 
 echo "Rebasing source '${SOURCE_BRANCH}' onto target '${REMOTE}/${TARGET_BRANCH}'"
-git branch -a
 
 # Fetch both branches so they exist (agent may only have default branch)
 git fetch "${REMOTE}" "${SOURCE_BRANCH}" "${TARGET_BRANCH}"
