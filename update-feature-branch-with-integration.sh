@@ -12,6 +12,7 @@ REMOTE=origin
 INTEGRATION_BRANCH=integration
 
 echo "Rebasing branch '${BRANCH_NAME}' onto '${REMOTE}/${INTEGRATION_BRANCH}'"
+git branch -a
 
 # Ensure we're on the right branch and clean
 git checkout "${BRANCH_NAME}"
